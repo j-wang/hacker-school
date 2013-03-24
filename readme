@@ -1,0 +1,13 @@
+Pretty self-explanatory. Contents of repository:
+
+1) fizzbuzz.rb - implements fizzbuzz in ruby
+
+2) fizzbuzz.py - implements fizzbuzz in python (using a generator). Less
+                 elegant, but was testing the idea
+
+3) tictactoe.py - simple tic-tac-toe game. Lets you play any size grid (though
+                  very large grids will get pretty boring, and will start to
+                  look ugly).
+
+4) tictactoe3.py - same as tic-tac-toe, but ported into Python 3. Less
+                   extensively tested than tictactoe.py.
