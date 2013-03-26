@@ -11,3 +11,7 @@ Pretty self-explanatory. Contents of repository:
 
 4) tictactoe3.py - same as tic-tac-toe, but ported into Python 3. Less
                    extensively tested than tictactoe.py.
+
+5) ttt_design.pdf - scans of design notes for tictactoe.py. Has some of the
+                    (not particularly organized) rationale behind its 
+                    implementation
