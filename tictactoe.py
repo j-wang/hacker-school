@@ -72,13 +72,11 @@ class Grid:
         cell_num = c + (r - 1) * maxr # cell ref in increment coord system
 
         # check if cell in diag, log if so -- center cell triggers both loops
-        for i in top_l_bot_r_diag:
-            if i == cell_num:
-                to_log.append(maxr + maxc + 1 - 1) # -1 at end to reindex to 0
+        if cell_num in top_l_bot_r_diag:
+            to_log.append(maxr + maxc + 1 - 1) # -1 at end to reindex to 0
 
-        for j in top_r_bot_l_diag:
-            if j == cell_num:
-                to_log.append(maxr + maxc + 2 - 1) # -1 at end to reindex to 0
+        if cell_num in top_r_bot_l_diag:
+            to_log.append(maxr + maxc + 2 - 1) # -1 at end to reindex to 0
         
     def _log_progress_to_victory(self, row, col, xo):
         # Logs the progress of X and O to victory through incrementing an array
@@ -119,148 +117,218 @@ class Grid:
 
         return False
 
-def print_game(game_grid):
-    """Prints the tic-tac-toe grid"""
-    pad_size = int(math.floor(math.log10(game_grid.max_col))) + 1 # max digits
-    sys.stdout.write("\n")
-    sys.stdout.write(' ' * pad_size + ' ')
-    
-    for cols in xrange(game_grid.max_col): # print col numbers
-        sys.stdout.write(str(cols + 1).rjust(pad_size + 1))
-
-    print("\n")
+class GameNotOver(Exception):
+    """GameInterface.end_game is called and game is not over."""
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
         
-    for rows in xrange(game_grid.max_row):
-        sys.stdout.write(str(rows + 1).rjust(pad_size + 1)) # print row number
-        for col in xrange(game_grid.max_col): # print grid elements
-            sys.stdout.write(str(game_grid.cells[rows][col]).rjust(pad_size+1))
+class GameInterface:
+    """Textual interface for Tic-Tac-Toe game."""
+    game = 0
+    
+    def __init__(self):
+        self.game = self.main_menu()
+
+    def print_game(self):
+        max_col = self.game.max_col
+        max_row = self.game.max_row
+        
+        """Prints the tic-tac-toe grid"""
+        pad_size = int(math.floor(math.log10(max_col))) + 1 # max digits
+        sys.stdout.write("\n")
+        sys.stdout.write(' ' * pad_size + ' ')
+
+        for cols in xrange(max_col): # print col numbers
+            sys.stdout.write(str(cols + 1).rjust(pad_size + 1))
+
         print("\n")
 
-        #print(game_grid._victory_routes) #uncomment to see victory progression
-    
-def main_menu():
-    """Prints and takes user input for the main menu of the game"""
-    repeat_menu = True
-    repeat_grid_select = True
-    select = 0
-    grid_size = 0
-    
-    print("* Tic-Tac-Toe Game! *\n")
+        for rows in xrange(max_row):
+            sys.stdout.write(str(rows + 1).rjust(pad_size + 1)) # print row number
+            for col in xrange(max_col): # print grid elements
+                sys.stdout.write(str(self.game.cells[rows][col]).rjust(pad_size+1))
+            print("\n")
 
-    while repeat_menu:
-        print("Menu selection")
-        print("1) New Game")
-        print("2) Quit")
-        try:
-            select = int(raw_input("Enter selection: "))
-            if select != 1 and select != 2:
-                print("Invalid selection.")
-            else:
-                repeat_menu = False
-        except ValueError:
-            print("Invalid selection.")
+            #print(game_grid._victory_routes) #uncomment to see victory progression
+    
+    def main_menu(self):
+        """Runs a text-based main menu for the game, returning a Grid object
+        based on user input
 
-    if select == 2: return False # quit
-            
-    while repeat_grid_select:
-        try:
-            grid_size = int(raw_input(
-                "Enter desired grid size (e.g. 3 for 3x3). Odd numbers only: "))
-            if grid_size > 15: # starts to exceed screen sizes
-                print("Grids this large are unsupported (may look ugly).")
-                keep_going = raw_input("Continue anyway? (y/n): ")
-                if str(keep_going) != "y":
-                    grid_size = 0
+        """
+        print("* Tic-Tac-Toe Game! *\n")
+        selected = self.print_menu()
+        if not selected: return False
+
+        return self.select_grid()
+        
+    def print_menu(self):
+        """Prints and takes user input for the main menu of the game"""
+        repeat_menu = True
+        select = 0
+        
+        while repeat_menu:
+            print("Menu selection")
+            print("1) New Game")
+            print("2) Quit")
+            try:
+                select = int(raw_input("Enter selection: "))
+                if select != 1 and select != 2:
+                    print("Invalid selection.")
                 else:
+                    repeat_menu = False
+            except ValueError:
+                print("Invalid selection.")
+
+        if select == 2: return False # quit
+        else: return select
+
+    def select_grid(self):
+        """Takes user input for a grid size, returns a Grid object based on
+        selection
+
+        """
+        repeat_grid_select = True
+        grid_size = 0
+        
+        while repeat_grid_select:
+            try:
+                grid_size = int(raw_input(
+                    "Enter desired grid size (e.g. 3 for 3x3). Odd numbers only: "))
+                if grid_size > 15: # starts to exceed screen sizes
+                    print("Grids this large are unsupported (may look ugly).")
+                    keep_going = raw_input("Continue anyway? (y/n): ")
+                    if str(keep_going) != "y":
+                        grid_size = 0
+                    else:
+                        repeat_grid_select = False
+                elif grid_size % 2 == 0:
+                    print("Currently, the game only supports odd numbered grids.")
+                elif grid_size == 1:
+                    print("That wouldn't be very interesting.")
+                else: 
                     repeat_grid_select = False
-            elif grid_size % 2 == 0:
-                print("Currently, the game only supports odd numbered grids.")
-            elif grid_size == 1:
-                print("That wouldn't be very interesting.")
-            else: 
-                repeat_grid_select = False
-        except ValueError:
-            print("Invalid selection.")
+            except ValueError:
+                print("Invalid selection.")
 
-    return Grid(grid_size, grid_size)
+        return Grid(grid_size, grid_size)
 
-def run_game():
-    """Main loop running the tic-tac-toe game."""
-    game = main_menu()
-    turn = 0
-    running = True
-    end_message = "Thanks for playing!"
-    
-    if not game:
-        print("Ending game...")
-    else:
-        max_turns = game.max_row * game.max_col
-        while running:
-            player = 'O' if turn % 2 == 0 else 'X'
-            print_game(game)
-            print("Player {}'s turn.".format(player)),
-            print("Pick row and column to tick (q to quit)")
-            row_input, col_input = True, True
-            row, col = 0, 0
+    def run_game(self):
+        """Main loop running the tic-tac-toe game. Takes a Grid object."""
+        turn = 0
+        running = True
+        game_again = True
+        end_message = "Thanks for playing!"
 
-            while row_input:
-                try:
-                    row = raw_input("Row: ")
-                    if row == "q": 
-                        print(end_message)
-                        return False
-                    elif int(row) < 1 or int(row) > game.max_row:
-                        print("Invalid row. Try again.")
-                    else:
-                        row_input = False
-                except:
-                    print("Invalid input, try again.")
-                        
-            while col_input and running:
-                try:
-                    col = raw_input("Column: ")
-                    if col == "q": 
-                        print(end_message)
-                        return False
-                    elif int(col) < 1 or int(col) > game.max_col:
-                        print("Invalid column. Try again.")
-                    else:
-                        col_input = False
-                except:
-                    print("Invalid input, try again.")
+        if not self.game:
+            print("Ending game...")
+        else:
+            while running:
+                player = 'O' if turn % 2 == 0 else 'X'
+                self.print_game()
+                print("Player {}'s turn.".format(player)),
+                print("Pick row and column to tick (q to quit)")
+                row, col = 0, 0
 
-            filled = game.fill_cell(int(row) - 1, int(col) - 1, player)
+                row = self.take_row_col("row", self.game.max_row)
+                if not row: # user selected q
+                    print(end_message)
+                    return False
 
-            if filled:
-                turn += 1
-                winner = game.winner()
-                if winner or turn >= max_turns:
-                    print_game(game)
-                    if winner:
-                        print("Player {} wins!".format(winner))
-                    elif turn >= max_turns:
-                        print("No one wins!")
+                col = self.take_row_col("col", self.game.max_col)
+                if not col:
+                    print(end_message)
+                    return False
+
+                filled = self.game.fill_cell(int(row) - 1, int(col) - 1, player)
+
+                if filled:
+                    turn += 1
                     try:
-                        print("Press 1 to return to main menu,"),
-                        print("or any other key to exit.")
-                        again = raw_input("What do you want to do?: ")
-                        if int(again) == 1:
-                            return True
-                        else:
+                        game_again = self.end_game(turn)
+                    except GameNotOver:
+                        pass
+                    else:
+                        if not game_again:
                             print(end_message)
-                            return False
-                    except ValueError:
-                        print(end_message)
-                        return False
-            else:
-                print("Cell is already occupied! Try again.\n")
+                        return game_again
+                else:
+                    print("Cell is already occupied! Try again.\n")
 
+    def end_game(self, turn):
+        """Takes a turn number. Runs appropriate end-game messages, based on
+        status (if there is a winner or if game has exceeded its max number of
+        turns. Asks user whether or not to play again and returns True if yes, False if no.
+
+        Raises GameNotOver Exception if game isn't over.
+ 
+        """
+        winner = self.game.winner()
+        max_turns = self.game.max_row * self.game.max_col
+
+        if winner or turn >= max_turns:
+            self.print_game()
+            if winner:
+                print("Player {} wins!".format(winner))
+            else:
+                print("No one wins!")
+            try:
+                print("Press 1 to return to main menu,"),
+                print("or any other key to exit.")
+                again = raw_input("What do you want to do?: ")
+                if int(again) == 1:
+                    return True
+                else:
+                    return False
+            except ValueError:
+                return False
+        else: raise GameNotOver("Game isn't over.")
+        
+                    
+    def take_row_col(self, row_or_col, max_row_or_col):
+        """Takes string 'row' or 'col' and max number of rows or columns. Takes
+        user input for row or column respectively. Returns int with row or
+        column number based on user input. If user inputs q, return False.
+
+        Throws exception if input is not 'row' or 'col' (case-insensitive)
+
+        """
+        user_input = True
+        user_selection = 0
+        row_col = row_or_col.lower()
+        pretty_output = row_col.title()
+
+        if row_col != "row" and row_col != "col":
+            raise Exception("Method takes row or col as string.")
+        
+        while user_input:
+            try:
+                user_selection = raw_input(pretty_output + ": ")
+                if user_selection == "q": 
+                    return False
+                elif int(user_selection) < 1 or int(user_selection) > max_row_or_col:
+                    print("Invalid row. Try again.")
+                else:
+                    user_input = False
+            except:
+                print("Invalid input, try again.")
+
+        return user_selection
+                    
 def main():
     run = True
 
     while run: # Lets the player restart game if he or she wishes to
-        run = run_game()
+        interface = GameInterface()
+        run = interface.run_game()
 
 if __name__ == "__main__":
     main()
                 
+
+
+
+
+
